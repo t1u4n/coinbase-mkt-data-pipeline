@@ -7,22 +7,19 @@ import os
 import time
 from kafka import KafkaProducer
 
-load_dotenv()
-
-COINBASE_MKT_WEBSOCKET_API_PROD = 'wss://ws-feed.exchange.coinbase.com'
-COINBASE_MKT_WEBSOCKET_API_SANDBOX = 'wss://ws-feed-public.sandbox.exchange.coinbase.com'
-KAFKA_URLS = os.getenv('KAFKA_URLS').split(',')
-
 
 class CoinbaseDataIngestor:
     """This class is used to ingest data from Coinbase."""
+    
+    COINBASE_MKT_WEBSOCKET_API_PROD = 'wss://ws-feed.exchange.coinbase.com'
+    COINBASE_MKT_WEBSOCKET_API_SANDBOX = 'wss://ws-feed-public.sandbox.exchange.coinbase.com'
+    KAFKA_URLS = os.getenv('KAFKA_URLS').split(',')
 
-    def __init__(self, url: str, channels: List[str], product_ids: List[str]):
+    def __init__(self, channels: List[str], product_ids: List[str]):
         """Constructor of CoinbaseDataIngestor."""
-        self._url = url
         self._channels = channels
         self._product_ids = product_ids
-        self._ws = websocket.WebSocketApp(self._url,
+        self._ws = websocket.WebSocketApp(self.COINBASE_MKT_WEBSOCKET_API_SANDBOX,
                                          on_open=self._on_open,
                                          on_message=self._on_message,
                                          on_error=self._on_error,
@@ -30,7 +27,7 @@ class CoinbaseDataIngestor:
         while True:
             try:
                 # Try to connect to Kafka
-                self._kafka_producer = KafkaProducer(bootstrap_servers = KAFKA_URLS)
+                self._kafka_producer = KafkaProducer(bootstrap_servers = self.KAFKA_URLS)
                 print("Kafka is up and running!")
                 break
             except Exception as e:
@@ -76,10 +73,11 @@ class CoinbaseDataIngestor:
 
 
 if __name__ == '__main__':
+    load_dotenv()
     # Enable traces for websocket client if need to debug
     # websocket.enableTrace(True)
     url = "wss://ws-feed.exchange.coinbase.com"
     channels = ["ticker"]
     product_ids = ["BTC-USD"]
-    ingestor = CoinbaseDataIngestor(COINBASE_MKT_WEBSOCKET_API_SANDBOX, channels, product_ids)
+    ingestor = CoinbaseDataIngestor(channels, product_ids)
     ingestor.run()
