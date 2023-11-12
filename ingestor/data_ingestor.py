@@ -10,7 +10,7 @@ load_dotenv()
 
 COINBASE_MKT_WEBSOCKET_API_PROD = 'wss://ws-feed.exchange.coinbase.com'
 COINBASE_MKT_WEBSOCKET_API_SANDBOX = 'wss://ws-feed-public.sandbox.exchange.coinbase.com'
-KAFKA_URLS = os.getenv('KAFKA_URL').split(',')
+KAFKA_URLS = os.getenv('KAFKA_URLS').split(',')
 
 
 class CoinbaseDataIngestor:
