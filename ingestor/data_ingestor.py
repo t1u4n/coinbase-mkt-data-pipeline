@@ -10,7 +10,7 @@ load_dotenv()
 
 COINBASE_MKT_WEBSOCKET_API_PROD = 'wss://ws-feed.exchange.coinbase.com'
 COINBASE_MKT_WEBSOCKET_API_SANDBOX = 'wss://ws-feed-public.sandbox.exchange.coinbase.com'
-KAFKA_URL = os.getenv('KAFKA_URL')
+KAFKA_URLS = os.getenv('KAFKA_URL').split(',')
 
 
 class CoinbaseDataIngestor:
@@ -26,7 +26,7 @@ class CoinbaseDataIngestor:
                                          on_message=self._on_message,
                                          on_error=self._on_error,
                                          on_close=self._on_close)
-        self._kafka_producer = KafkaProducer(bootstrap_servers = [KAFKA_URL])
+        self._kafka_producer = KafkaProducer(bootstrap_servers = KAFKA_URLS)
     
     def _on_message(self, ws: 'websocket.WebSocketApp', msg: str) -> None:
         """This method is used to handle the message received from Coinbase."""
