@@ -4,6 +4,7 @@ from threading import Thread
 from typing import List
 from dotenv import load_dotenv
 import os
+import time
 from kafka import KafkaProducer
 
 load_dotenv()
@@ -26,7 +27,15 @@ class CoinbaseDataIngestor:
                                          on_message=self._on_message,
                                          on_error=self._on_error,
                                          on_close=self._on_close)
-        self._kafka_producer = KafkaProducer(bootstrap_servers = KAFKA_URLS)
+        while True:
+            try:
+                # Try to connect to Kafka
+                self._kafka_producer = KafkaProducer(bootstrap_servers = KAFKA_URLS)
+                print("Kafka is up and running!")
+                break
+            except Exception as e:
+                print("Waiting for Kafka to start...")
+                time.sleep(5)
     
     def _on_message(self, ws: 'websocket.WebSocketApp', msg: str) -> None:
         """This method is used to handle the message received from Coinbase."""
