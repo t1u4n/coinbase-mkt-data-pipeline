@@ -34,3 +34,12 @@ services:
       - kafka
     environment:
       KAFKA_URLS: "kafka:9092"
+
+  data-processor:
+    build: ./processor
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_URLS: "kafka:9092"
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
