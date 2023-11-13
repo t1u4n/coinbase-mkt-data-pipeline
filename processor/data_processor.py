@@ -2,6 +2,8 @@ from pyspark.sql import SparkSession
 from pyspark.sql import DataFrame
 import os
 from dotenv import load_dotenv
+import time
+import logging
 
 class DataProcessor:
     """This class is used to process data from Kafka."""
@@ -15,14 +17,15 @@ class DataProcessor:
         self._topics = topics
         self._s3_bucket_path = s3_bucket_path
         self._checkpoint_path = checkpoint_path
-        self.spark = SparkSession \
+        self._spark = SparkSession \
             .builder \
             .appName(self.APP_NAME) \
             .config("spark.hadoop.fs.s3a.access.key", self.S3_ACCESS_KEY) \
             .config("spark.hadoop.fs.s3a.secret.key", self.S3_SECRET_KEY) \
             .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
             .getOrCreate()
-        self.spark.sparkContext.setLogLevel("ERROR")
+        self._spark.sparkContext.setLogLevel("ERROR")
+        self.log = logging.getLogger(self.APP_NAME)
     
     def run(self) -> None:
         """This method is used to run the data processor to process data from Kafka."""
@@ -32,12 +35,17 @@ class DataProcessor:
 
     def _get_stream_dataframe(self) -> 'DataFrame':
         """This method is used to get the stream dataframe from Kafka."""
-        return self.spark \
-            .readStream \
-            .format("kafka") \
-            .option("kafka.bootstrap.servers", self.KAFKA_URLS) \
-            .option("subscribe", self._topics) \
-            .load()
+        while True:
+            try:
+                return self._spark \
+                    .readStream \
+                    .format("kafka") \
+                    .option("kafka.bootstrap.servers", self.KAFKA_URLS) \
+                    .option("subscribe", self._topics) \
+                    .load()
+            except Exception as e:
+                self.log.error("Waiting for Kafka to start", e)
+                time.sleep(5)
 
     def _transform_data(self, df: 'DataFrame') -> 'DataFrame':
         """This method is used to transform the data from Kafka."""
@@ -57,7 +65,7 @@ if __name__ == '__main__':
     load_dotenv()
 
     topics = "BTC-USD"
-    s3_path = "til/coinbase/mkt-data-bucket"
+    s3_path = "s3a://coinbase-mkt-aws-s3-bucket"
     checkpoint_location = "spark/checkpoint"
     data_processor = DataProcessor(topics, s3_path, checkpoint_location)
     data_processor.run()
